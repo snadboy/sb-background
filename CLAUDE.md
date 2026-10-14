@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Repo | `~/projects/git/sb-background` — **local only so far** (public GitHub repo needs the user's OK; HACS needs it public) |
+| Repo | github.com/snadboy/sb-background (public, created 2026-10-14) — local `~/projects/git/sb-background`, branch `main` |
 | Domain | `sb_background` (MIT) |
 | Deploy (until HACS) | `tar czf - --exclude=__pycache__ -C custom_components sb_background \| ssh snadboy@homeassistant "cd /config/custom_components && tar xzf -"` then a FULL restart for Python changes (a reload does not re-import); JS changes need only a browser reload |
 | Tests | `python3 tests/test_validate.py` (offline, 12 checks) |
@@ -67,6 +67,7 @@ Script renamed `vacancy_window` → **`area_nightlight`** (copy, move Kitchen, d
 
 ## Next
 
-- User OK for the public GitHub repo → HACS custom repository.
+- Release (tag) + add as a HACS custom repository (category integration), then install via HACS
+  instead of the hand copy.
 - Migrate Kitchen / Dining / Living Room from the Vacancy Scene blueprint, one at a time,
   disabling each blueprint automation as its instance takes over.
