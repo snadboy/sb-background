@@ -6,7 +6,7 @@
                                                              → creates (no entry_id) or updates an instance;
                                                                refused while there are errors
   sb_background/delete  {entry_id}
-  sb_background/settings {notify_service?}                   → the settings (set when given)
+  sb_background/settings {notify_service?, persistent?}      → the settings (set when given)
 
 Instances themselves are read from the Status sensors' attributes (`sb_background: true`),
 so the card updates live with no subscription of its own.
@@ -121,23 +121,26 @@ async def ws_delete(hass: HomeAssistant, connection: websocket_api.ActiveConnect
     connection.send_result(msg["id"], {})
 
 
-@websocket_api.websocket_command({vol.Required("type"): "sb_background/settings", vol.Optional("notify_service"): str})
+@websocket_api.websocket_command({vol.Required("type"): "sb_background/settings", vol.Optional("notify_service"): str,
+                                  vol.Optional("persistent"): bool})
 @websocket_api.async_response
 async def ws_settings(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
     data = hass.data[DOMAIN]
-    if "notify_service" in msg:
+    if "notify_service" in msg or "persistent" in msg:
         if not connection.user.is_admin:
             connection.send_error(msg["id"], "unauthorized", "Only an admin can change the settings.")
             return
-        svc = msg["notify_service"].strip()
+        svc = msg.get("notify_service", data["settings"].get("notify_service", "")).strip()
         if svc and not (svc.startswith("notify.") and hass.services.has_service("notify", svc.split(".", 1)[1])):
             connection.send_error(msg["id"], "invalid", f"{svc} is not a notify action.")
             return
         data["settings"]["notify_service"] = svc
+        if "persistent" in msg:
+            data["settings"]["persistent"] = msg["persistent"]
         await data["store"].async_save(data["settings"])
     notify = sorted(f"notify.{s}" for s in hass.services.async_services_for_domain("notify")
                     if s not in ("send_message", "persistent_notification", "notify"))
-    connection.send_result(msg["id"], {**data["settings"], "notify_services": notify})
+    connection.send_result(msg["id"], {"persistent": True, **data["settings"], "notify_services": notify})
 
 
 @callback

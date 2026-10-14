@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -126,7 +126,10 @@ select option { background: var(--card-background-color, #fff); color: var(--pri
 class SbBackgroundCard extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
+    // The list re-renders (every 30 s, and on every status change) into .body ONLY.
+    // The editor <dialog> is a sibling of the card: rendering into the whole shadow root
+    // destroyed an open editor within 30 s (0.1.0 — "the popup is magically dismissed").
+    this.attachShadow({ mode: "open" }).innerHTML = `<style>${STYLE}</style><ha-card><div class="body"></div></ha-card>`;
     this._confirm = null;     // entry_id whose delete is being confirmed
     this._sig = "";
     this._busy = {};
@@ -193,16 +196,15 @@ class SbBackgroundCard extends HTMLElement {
           <button class="nodel">Keep</button><button class="dodel danger">Delete</button></div>` : ""}
       </div>`;
     }).join("");
-    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card>
+    this.shadowRoot.querySelector(".body").innerHTML = `
       <div class="head"><div class="title">${esc(this._config.title)}</div><button class="add primary">+ Add</button></div>
       ${rows || `<div class="empty">No background instances yet. Add one: pick a script and fill in its fields.</div>`}
-      ${this._msg ? `<div class="note">${esc(this._msg)}</div>` : ""}
-    </ha-card>`;
+      ${this._msg ? `<div class="note">${esc(this._msg)}</div>` : ""}`;
     this._wire();
   }
 
   _wire() {
-    const root = this.shadowRoot;
+    const root = this.shadowRoot.querySelector(".body");
     const byRow = (el) => this._instances().find((i) => i.entryId === el.closest(".row")?.dataset.e);
     root.querySelector("button.add")?.addEventListener("click", () => this._openEditor(null));
     root.querySelectorAll("input.en").forEach((el) => el.addEventListener("change", () => {
@@ -396,7 +398,8 @@ class SbBackgroundPanel extends HTMLElement {
       .bar a:hover { background: rgba(127,127,127,.2); opacity: 1; }
       .page { padding: 16px; } .col { max-width: 860px; margin: 0 auto; }
       .intro { color: var(--secondary-text-color); font-size: 14px; margin: 0 4px 12px; line-height: 1.5; }
-      .settings { display: flex; align-items: center; gap: 8px; margin: 14px 4px 0; font-size: 14px; flex-wrap: wrap; }
+      .settings { display: flex; align-items: center; gap: 8px; margin: 6px 4px 0; font-size: 14px; flex-wrap: wrap; }
+      .settings.first { margin-top: 16px; }
       .settings select { font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--divider-color);
                          background: var(--card-background-color); color: var(--primary-text-color); color-scheme: light dark; }
       .settings .ok { color: var(--success-color, #43a047); }
@@ -404,9 +407,11 @@ class SbBackgroundPanel extends HTMLElement {
     </style>
     <div class="bar"><ha-menu-button></ha-menu-button><div class="title">SB Background</div><a href="/config/integrations/integration/sb_background">Integration page</a></div>
     <div class="page"><div class="col">
-      <div class="intro">An instance is a script plus the values for its fields. SB Background starts every enabled instance when Home Assistant starts, restarts it whenever its run ends, and raises a Repairs issue and a push when one cannot run or keeps failing. What an instance <i>does</i> is its script — edit that under Settings → Scripts as usual.</div>
+      <div class="intro">An instance is a script plus the values for its fields. SB Background starts every enabled instance when Home Assistant starts, restarts it whenever its run ends, and tells you (settings below) when one cannot run or keeps failing. What an instance <i>does</i> is its script — edit that under Settings → Scripts as usual.</div>
       <div class="slot"></div>
-      <div class="settings">Alerts are pushed to <select class="ns"><option>…</option></select><span class="saved"></span></div>
+      <div class="settings first"><b>When an instance needs attention</b> (always a Repairs issue), also:</div>
+      <div class="settings"><label><input type="checkbox" class="pn"> show it in Notifications</label></div>
+      <div class="settings">push it to <select class="ns"><option>…</option></select><span class="saved"></span></div>
       <div class="ver">SB Background ${VERSION}</div>
     </div></div>`;
     this._menu = root.querySelector("ha-menu-button");
@@ -420,17 +425,25 @@ class SbBackgroundPanel extends HTMLElement {
   }
 
   async _settings(root) {
-    const sel = root.querySelector(".ns"), saved = root.querySelector(".saved");
+    const sel = root.querySelector(".ns"), bell = root.querySelector(".pn"), saved = root.querySelector(".saved");
+    const label = (svc) => {        // notify.mobile_app_pixel_snadboy → "Pixel Snadboy (mobile app)"
+      const m = /^notify\.mobile_app_(.+)$/.exec(svc);
+      const t = (m ? m[1] : svc.replace(/^notify\./, "")).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      return m ? `${t} (mobile app)` : t;
+    };
     const draw = (s) => {
       const opts = ["", ...s.notify_services];
       if (s.notify_service && !opts.includes(s.notify_service)) opts.push(s.notify_service);
-      sel.innerHTML = opts.map((o) => `<option value="${esc(o)}" ${o === (s.notify_service || "") ? "selected" : ""}>${o ? esc(o) : "— nobody (Repairs only) —"}</option>`).join("");
+      sel.innerHTML = opts.map((o) => `<option value="${esc(o)}" ${o === (s.notify_service || "") ? "selected" : ""}>${o ? `${esc(label(o))} — ${esc(o)}` : "— no device —"}</option>`).join("");
+      bell.checked = s.persistent !== false;
+    };
+    const save = async (patch) => {
+      try { draw(await this._hass.callWS({ type: "sb_background/settings", ...patch })); saved.className = "saved ok"; saved.textContent = "Saved."; }
+      catch (e) { saved.className = "saved"; saved.textContent = String(e?.message || e); }
     };
     try { draw(await this._hass.callWS({ type: "sb_background/settings" })); } catch (e) { saved.textContent = String(e?.message || e); }
-    sel.addEventListener("change", async () => {
-      try { draw(await this._hass.callWS({ type: "sb_background/settings", notify_service: sel.value })); saved.className = "saved ok"; saved.textContent = "Saved."; }
-      catch (e) { saved.className = "saved"; saved.textContent = String(e?.message || e); }
-    });
+    sel.addEventListener("change", () => save({ notify_service: sel.value }));
+    bell.addEventListener("change", () => save({ persistent: bell.checked }));
   }
 
   async _deepLink() {

@@ -31,10 +31,11 @@ fields; instances run always; it reports viability. Name chosen by the user.
   A registered entity with no state yet reads "unavailable" (boot race), not missing.
 - Restart policy: 2 s after an end, ×2 per consecutive run < 60 s, cap 300 s; ≥3 = failing.
   A run that lasts 60 s resets the count (`_settled`). Restart button resets it too.
-- Alerts (`alerts.py`): after 120 s of problem → Repairs issue + ONE push per episode
-  (`alert_once`, tag `sb_background_<entry_id>`); issue text updates; both cleared on
-  recovery (`clear_notification` only for `notify.mobile_app_*`). Target in a Store
-  (`sb_background.settings`), default `notify.mobile_app_pixel_snadboy`.
+- Alerts (`alerts.py`): after 120 s of problem → Repairs issue (always) + HA Notifications
+  entry (setting `persistent`, default on; id `sb_background_<entry_id>`, text kept current)
+  + ONE device push per episode (setting `notify_service`, optional; `alert_once`, same tag);
+  all cleared on recovery (`clear_notification` only for `notify.mobile_app_*`). Settings in
+  a Store (`sb_background.settings`), default phone `notify.mobile_app_pixel_snadboy`.
 - Startup: first runs after EVENT_HOMEASSISTANT_STARTED + 20 s.
 - **UI = one JS module** served by the integration and loaded on every page with
   `add_extra_js_url` (card `custom:sb-background-card`) + `panel_custom` (`/sb-background`,
@@ -54,6 +55,15 @@ script edit → run restarted, not counted short ✓ · Enabled off stops the ru
 HA restart: waiting → running after settle, disabled stays stopped ✓.
 Found + fixed: a new row missed its switch/button (hass.entities arrives later → in the
 render signature); a push per reason change (now one per episode).
+
+## 0.2.0 (2026-10-14)
+
+User: "I click Edit, the popup appears and a minute or so later it is magically
+dismissed". Cause: `_render()` replaced the WHOLE shadow root — the editor `<dialog>`
+included — on the 30 s tick and on status changes. Now the list renders into `.body` only
+and the dialog is a sibling of `<ha-card>`. Verified: editor open 75 s, all 7 fields intact.
+Also: HA Notifications channel + its setting; device push optional ("— no device —").
+Script renamed `vacancy_window` → **`area_nightlight`** (copy, move Kitchen, delete old).
 
 ## Next
 

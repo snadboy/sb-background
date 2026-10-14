@@ -1,9 +1,13 @@
-"""Telling the user an instance is not running: a Repairs issue and a phone push.
+"""Telling the user an instance needs attention, on up to three channels:
 
-Both wait ALERT_GRACE_SECONDS, so a boot race (an entity whose integration is still
-loading) or one quick restart does not page anyone. The push is replace-in-place
-(tag sb_background_<entry_id>) and is cleared when the instance recovers; so is the
-Repairs issue.
+- a Repairs issue — always;
+- HA's Notifications (the bell) — setting `persistent`, default on; one notification
+  per instance (notification_id sb_background_<entry_id>), its text kept current;
+- a push to a chosen device — setting `notify_service`, optional; ONE per episode
+  (tag sb_background_<entry_id>, alert_once), so a changing reason does not buzz again.
+
+All wait ALERT_GRACE_SECONDS, so a boot race (an entity whose integration is still
+loading) or one quick restart pages nobody, and all are cleared on recovery.
 """
 
 from __future__ import annotations
@@ -11,6 +15,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
+from homeassistant.components import persistent_notification as pn
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_call_later
@@ -39,7 +44,8 @@ class Alerts:
         self._reason = reason
         if problem:
             if self._raised:
-                self._issue()              # keep the Repairs text current; ONE push per episode
+                self._issue()              # keep Repairs + Notifications current; ONE push per episode
+                self._bell()
             elif self._pending is None:
                 self._pending = async_call_later(self.hass, ALERT_GRACE_SECONDS, HassJob(self._grace_over, cancel_on_shutdown=True))
             return
@@ -63,7 +69,17 @@ class Alerts:
     @callback
     def _raise(self) -> None:
         self._issue()
+        self._bell()
         self._push(self._reason or "Not running.")
+
+    def _title(self) -> str:
+        return f"SB Background: {self.name} needs attention"
+
+    @callback
+    def _bell(self) -> None:
+        if (self._settings() or {}).get("persistent", True):
+            pn.async_create(self.hass, f"{self._reason or 'Not running.'}\n\n[Open SB Background](/{PANEL_URL})",
+                            title=self._title(), notification_id=self._tag())
 
     @callback
     def _issue(self) -> None:
@@ -77,6 +93,7 @@ class Alerts:
     @callback
     def clear(self) -> None:
         ir.async_delete_issue(self.hass, DOMAIN, issue_id(self.entry_id))
+        pn.async_dismiss(self.hass, self._tag())       # whatever the setting is now
         svc = self._service()
         if svc and svc.startswith("mobile_app_"):
             self._call(svc, {"message": "clear_notification", "data": {"tag": self._tag()}})
@@ -97,7 +114,7 @@ class Alerts:
         if not svc:
             return
         self._call(svc, {
-            "title": f"SB Background: {self.name} needs attention",
+            "title": self._title(),
             "message": message,
             "data": {"tag": self._tag(), "alert_once": True, "clickAction": f"/{PANEL_URL}", "url": f"/{PANEL_URL}"},
         })

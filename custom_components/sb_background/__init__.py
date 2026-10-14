@@ -42,7 +42,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     integration = await async_get_integration(hass, DOMAIN)
     version = str(integration.version) if integration.version else "0"
     store = Store(hass, SETTINGS_VERSION, SETTINGS_KEY)
-    settings = await store.async_load() or {"notify_service": DEFAULT_NOTIFY}
+    settings = await store.async_load() or {"notify_service": DEFAULT_NOTIFY, "persistent": True}
     hass.data[DOMAIN] = {"version": version, "store": store, "settings": settings, "instances": {}}
     websocket.async_register(hass)
     try:
