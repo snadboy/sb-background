@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "New background instance",
+        "description": "An instance runs a script continuously with its own field values. SB Background starts it when Home Assistant starts, restarts it whenever it ends, and tells you when it cannot run. Instances are easier to manage on the SB Background page in the sidebar.",
+        "data": { "name": "Instance name", "script": "Script" }
+      },
+      "fields": {
+        "title": "Fields for {script}",
+        "description": "Values passed to every run of the script.\n{problems}"
+      }
+    },
+    "error": {
+      "name_required": "Give the instance a name.",
+      "script_missing": "That script does not exist.",
+      "invalid_fields": "Some fields need attention — see the list above."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Fields for {script}",
+        "description": "Values passed to every run of the script. Saving restarts this instance.\n{problems}"
+      }
+    },
+    "error": {
+      "invalid_fields": "Some fields need attention — see the list above."
+    }
+  },
+  "issues": {
+    "instance_problem": {
+      "title": "SB Background: {name} needs attention",
+      "description": "{reason}\n\nOpen the SB Background page in the sidebar to see and fix the instance."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "state": {
+          "waiting": "Waiting for start-up",
+          "running": "Running",
+          "restarting": "Restarting",
+          "failing": "Failing",
+          "invalid": "Cannot run",
+          "stopped": "Stopped"
+        }
+      }
+    }
+  }
+}
