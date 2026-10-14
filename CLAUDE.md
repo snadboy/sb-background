@@ -67,7 +67,23 @@ and the dialog is a sibling of `<ha-card>`. Verified: editor open 75 s, all 7 fi
 Also: HA Notifications channel + its setting; device push optional ("— no device —").
 Script renamed `vacancy_window` → **`area_nightlight`** (copy, move Kitchen, delete old).
 
-## Next
+## 0.2.1 (2026-10-14) — the card's visual editor
 
-- Migrate Kitchen / Dining / Living Room from the Vacancy Scene blueprint, one at a time,
-  disabling each blueprint automation as its instance takes over.
+User: "Shouldn't the SB Background card have a visual editor similar to the SB Scheduler
+card". `getConfigElement()` → `sb-background-card-editor` (ha-form): Title (as SB Scheduler)
++ "Only instances of these scripts" (`scripts:` — empty/absent = all; exactly one also
+preselects it in + Add). Verified headless: labels, config-changed with/without `scripts`,
+filter 3/3/0 + empty message. Also confirmed the module really loads on dashboards via
+add_extra_js_url (a test's request interception had hidden it).
+
+## Migration — DONE 2026-10-14
+
+Kitchen, Dining Room and Living Room overnight are SB Background instances of
+`script.area_nightlight` with the blueprint's exact inputs. The three
+`automation.vacancy_scene_*_overnight` automations and the `vacancy-scene-window.yaml`
+blueprint are deleted (YAML in docker-homelab git history, commit 7d4c31c).
+
+## Ideas, not started
+
+- Rename the "Lights that must be off" field to say what it does ("Skip the nightlight
+  while any of these are on") — offered to the user, not asked for yet.

@@ -25,7 +25,8 @@ starts them again.
   Restart, Edit, Duplicate and Delete; **+ Add**; the alert settings (Notifications on/off,
   which device gets a push).
 - **Card**: `type: custom:sb-background-card` (loaded by the integration — no resource
-  to add).
+  to add). Visual editor: Title, and "Only instances of these scripts" (`scripts:`; empty =
+  all; with exactly one, + Add starts with that script).
 - **Integrations → SB Background → Add entry** works too.
 
 Each instance is a device with `sensor.<name>_status`, `binary_sensor.<name>_problem`,

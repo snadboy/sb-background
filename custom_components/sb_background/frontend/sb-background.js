@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -136,6 +136,7 @@ class SbBackgroundCard extends HTMLElement {
   }
 
   static getStubConfig() { return { title: "Background" }; }
+  static getConfigElement() { return document.createElement(`${CARD}-editor`); }
   setConfig(config) { this._config = { title: "Background", ...(config || {}) }; this._sig = ""; this._render(); }
   getCardSize() { return 2 + this._instances().length; }
 
@@ -157,6 +158,8 @@ class SbBackgroundCard extends HTMLElement {
     const out = [];
     for (const [id, st] of Object.entries(h.states)) {
       if (!id.startsWith("sensor.") || !st.attributes?.sb_background) continue;
+      const only = this._config?.scripts || [];
+      if (only.length && !only.includes(st.attributes.script)) continue;
       const devId = h.entities?.[id]?.device_id;
       const sib = (dom) => Object.values(h.entities || {}).find((e) => e.device_id === devId && e.platform === "sb_background" && e.entity_id.startsWith(dom + "."))?.entity_id;
       out.push({ statusEntity: id, status: st.state, attr: st.attributes, entryId: st.attributes.entry_id,
@@ -198,7 +201,9 @@ class SbBackgroundCard extends HTMLElement {
     }).join("");
     this.shadowRoot.querySelector(".body").innerHTML = `
       <div class="head"><div class="title">${esc(this._config.title)}</div><button class="add primary">+ Add</button></div>
-      ${rows || `<div class="empty">No background instances yet. Add one: pick a script and fill in its fields.</div>`}
+      ${rows || `<div class="empty">${(this._config.scripts || []).length
+        ? `No instances of ${esc((this._config.scripts || []).map((s) => this._hass?.states[s]?.attributes?.friendly_name || s).join(", "))} yet.`
+        : "No background instances yet. Add one: pick a script and fill in its fields."}</div>`}
       ${this._msg ? `<div class="note">${esc(this._msg)}</div>` : ""}`;
     this._wire();
   }
@@ -241,7 +246,8 @@ class SbBackgroundCard extends HTMLElement {
     const h = this._hass;
     const copy = !!opts.copy;
     const entryId = inst && !copy ? inst.entryId : null;
-    const d = { name: inst ? (copy ? `${inst.name} (copy)` : inst.name) : "", script: inst?.attr.script || "",
+    const only = this._config?.scripts || [];
+    const d = { name: inst ? (copy ? `${inst.name} (copy)` : inst.name) : "", script: inst?.attr.script || (only.length === 1 ? only[0] : ""),
                 fields: JSON.parse(JSON.stringify(inst?.attr.fields || {})) };
     let meta = null;           // {fields:[...], name, mode, max}
     const snap = () => JSON.stringify(d);
@@ -373,10 +379,50 @@ class SbBackgroundCard extends HTMLElement {
   }
 }
 
+// The dashboard's visual card editor. Title, as in the SB Scheduler card, plus which
+// scripts' instances the card shows (empty = all; exactly one also preselects it in + Add).
+class SbBackgroundCardEditor extends HTMLElement {
+  setConfig(config) {
+    this._config = { ...(config || {}) };
+    if (this._form) this._form.data = this._data();
+  }
+  set hass(h) {
+    this._hass = h;
+    if (this._form) this._form.hass = h; else this._build();
+  }
+  _data() { return { title: this._config.title ?? "", scripts: this._config.scripts || [] }; }
+  async _build() {
+    if (this._building || !this._hass) return;
+    this._building = true;
+    if (!(await loadHaForm())) { this.textContent = "HA's form element did not load — edit this card in YAML."; return; }
+    const f = document.createElement("ha-form");
+    f.hass = this._hass;
+    f.schema = [
+      { name: "title", selector: { text: {} } },
+      { name: "scripts", selector: { entity: { domain: "script", multiple: true } } },
+    ];
+    f.data = this._data();
+    f.computeLabel = (x) => ({ title: "Title", scripts: "Only instances of these scripts" }[x.name]);
+    f.computeHelper = (x) => (x.name === "scripts" ? "Leave empty to show every instance. With exactly one, + Add starts with that script." : undefined);
+    f.addEventListener("value-changed", (e) => {
+      e.stopPropagation();
+      const v = e.detail.value || {};
+      const next = { ...this._config, title: v.title ?? "" };
+      if ((v.scripts || []).length) next.scripts = v.scripts; else delete next.scripts;
+      this._config = next;
+      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: next }, bubbles: true, composed: true }));
+    });
+    this.appendChild(f);
+    this._form = f;
+  }
+}
+
 if (!customElements.get(CARD)) customElements.define(CARD, SbBackgroundCard);
+if (!customElements.get(`${CARD}-editor`)) customElements.define(`${CARD}-editor`, SbBackgroundCardEditor);
 window.customCards = window.customCards || [];
 if (!window.customCards.some((c) => c.type === CARD)) {
-  window.customCards.push({ type: CARD, name: "SB Background", description: "Background script instances: status, start/stop, restart, add and edit." });
+  window.customCards.push({ type: CARD, name: "SB Background", preview: false, documentationURL: "https://github.com/snadboy/sb-background",
+    description: "Background script instances: status, start/stop, restart, add and edit." });
 }
 
 // ---- the sidebar page ---------------------------------------------------------------

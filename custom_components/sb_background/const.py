@@ -3,7 +3,7 @@
 DOMAIN = "sb_background"
 
 CONF_NAME = "name"
-CONF_SCRIPT = "script"            # the script's entity id, e.g. script.vacancy_window
+CONF_SCRIPT = "script"            # the script's entity id, e.g. script.area_nightlight
 CONF_FIELDS = "fields"            # {field key: value} passed to every run
 CONF_ENABLED = "enabled"
 
