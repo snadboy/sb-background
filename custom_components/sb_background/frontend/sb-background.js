@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -88,7 +88,7 @@ ha-card { overflow: visible; }
 .sbk-ico.bad { background: color-mix(in srgb, var(--error-color, #db4437) 20%, transparent); color: var(--error-color, #db4437); }
 .sbk-txt { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .sbk-t { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--primary-text-color); }
-.sbk-s { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; }
+.sbk-s { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; font-size: 13px; line-height: 1.35; color: var(--secondary-text-color); }
 .sbk-chip { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; flex: 0 0 auto;
             background: color-mix(in srgb, var(--primary-color) 16%, transparent); color: var(--primary-color); }
 .sbk-dot { width: 3px; height: 3px; border-radius: 2px; background: var(--secondary-text-color); opacity: .7; flex: 0 0 3px; }
