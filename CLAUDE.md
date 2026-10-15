@@ -67,6 +67,16 @@ and the dialog is a sibling of `<ha-card>`. Verified: editor open 75 s, all 7 fi
 Also: HA Notifications channel + its setting; device push optional ("— no device —").
 Script renamed `vacancy_window` → **`area_nightlight`** (copy, move Kitchen, delete old).
 
+## 0.3.0 (2026-10-14) — the shared SB row style
+
+User asked for one consistent style across SB Scheduler, SB Watcher and SB Background; agreed
+from a canvas mockup (https://claude.ai/artifact/59PH75QATuaFtN4t4B1wQX). The **row kit**
+(`KIT_CSS`, `kitMenu`, `sbk-*` classes) is copied VERBATIM into sb-scheduler-card and
+sb-watch-card — change it in all three. Header: title · count · + Add · ⋮. Row: status icon
+(script's own icon; tint armed/run/idle/warn/bad) · name · chip (script) + what it is doing
+now · third line only for an error/warning · Enabled toggle · ⋮ (Edit, Duplicate, Restart,
+Delete… → inline confirm). Tap the row = edit. Theme variables + color-mix, so light themes work.
+
 ## 0.2.1 (2026-10-14) — the card's visual editor
 
 User: "Shouldn't the SB Background card have a visual editor similar to the SB Scheduler
