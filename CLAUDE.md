@@ -67,6 +67,13 @@ and the dialog is a sibling of `<ha-card>`. Verified: editor open 75 s, all 7 fi
 Also: HA Notifications channel + its setting; device push optional ("— no device —").
 Script renamed `vacancy_window` → **`area_nightlight`** (copy, move Kitchen, delete old).
 
+## 0.4.2 (2026-10-15) — kit recovery
+
+A card sat on "SB UI Kit is not loaded" after HA's 05:51 restart: the page's one request for
+the kit (add_extra_js_url) had failed and nothing retried. All four cards' loaders now
+`import()` `/sb_ui_kit_static/sb-ui-kit.js?v=retry-…` after 3 s without the kit, and redraw on a
+late `sb-ui-kit-ready`. Verified by aborting the page's own kit request: all four drew by 5 s.
+
 ## 0.4.0 (2026-10-14) — the kit is shared at run time
 
 The row kit no longer lives here: it is the **sb_ui_kit** integration (repo snadboy/sb-ui-kit),
