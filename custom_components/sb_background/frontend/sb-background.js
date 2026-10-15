@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.5.0";
+const VERSION = "0.5.1";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -81,7 +81,7 @@ const whenKit = () => kitPromise || (kitPromise = new Promise((resolve) => {
 const foldKey = (card, title) => `sb-card-collapsed:${card}:${title || ""}`;
 const foldGet = (k) => { try { return localStorage.getItem(k) === "1"; } catch (e) { return false; } };
 const foldSet = (k, v) => { try { if (v) localStorage.setItem(k, "1"); else localStorage.removeItem(k); } catch (e) { /* not remembered */ } };
-const foldBtn = (folded) => `<button class="sbk-kb fold" title="${folded ? "Show the entries" : "Hide the entries"}" aria-label="${folded ? "Show the entries" : "Hide the entries"}" aria-expanded="${folded ? "false" : "true"}"><ha-icon icon="${folded ? "mdi:chevron-down" : "mdi:chevron-up"}"></ha-icon></button>`;
+const foldBtn = (folded) => `<button class="sbk-kb fold" title="${folded ? "Show the entries" : "Hide the entries"}" aria-label="${folded ? "Show the entries" : "Hide the entries"}" aria-expanded="${folded ? "false" : "true"}"><ha-icon icon="${folded ? "mdi:chevron-right" : "mdi:chevron-down"}"></ha-icon></button>`;
 
 const KIT_MISSING = `<div style="padding: 16px; color: var(--error-color)">The <b>SB UI Kit</b> integration is not loaded — install “SB UI Kit” from HACS and restart Home Assistant.</div>`;
 
