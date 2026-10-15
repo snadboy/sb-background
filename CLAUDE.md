@@ -67,6 +67,10 @@ and the dialog is a sibling of `<ha-card>`. Verified: editor open 75 s, all 7 fi
 Also: HA Notifications channel + its setting; device push optional ("— no device —").
 Script renamed `vacancy_window` → **`area_nightlight`** (copy, move Kitchen, delete old).
 
+## 0.5.0 (2026-10-15) — collapse the card
+
+Collapse: a chevron at the end of the header hides / shows the entries ("Hide the entries" / "Show the entries"), remembered per card (type + title) per browser in localStorage `sb-card-collapsed:<card>:<title>`; collapsed, the header count adds a red "· N need attention" for rows tinted warn/bad. No chevron with `panel: true`. Same helpers (foldKey/foldGet/foldSet/foldBtn) in all three SB cards.
+
 ## 0.4.2 (2026-10-15) — kit recovery
 
 A card sat on "SB UI Kit is not loaded" after HA's 05:51 restart: the page's one request for

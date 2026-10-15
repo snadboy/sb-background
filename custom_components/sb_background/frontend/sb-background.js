@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.4.2";
+const VERSION = "0.5.0";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -76,6 +76,13 @@ const whenKit = () => kitPromise || (kitPromise = new Promise((resolve) => {
   setTimeout(() => { if (!kit()) import(`/sb_ui_kit_static/sb-ui-kit.js?v=retry-${Date.now()}`).then(on, () => {}); }, 3000);
   setTimeout(() => resolve(kit()), 15000);     // still null: not installed (or HA unreachable)
 }));
+// Collapsed or not, per card (type + title), per browser. Storage can be blocked (private
+// window): then it simply is not remembered.
+const foldKey = (card, title) => `sb-card-collapsed:${card}:${title || ""}`;
+const foldGet = (k) => { try { return localStorage.getItem(k) === "1"; } catch (e) { return false; } };
+const foldSet = (k, v) => { try { if (v) localStorage.setItem(k, "1"); else localStorage.removeItem(k); } catch (e) { /* not remembered */ } };
+const foldBtn = (folded) => `<button class="sbk-kb fold" title="${folded ? "Show the entries" : "Hide the entries"}" aria-label="${folded ? "Show the entries" : "Hide the entries"}" aria-expanded="${folded ? "false" : "true"}"><ha-icon icon="${folded ? "mdi:chevron-down" : "mdi:chevron-up"}"></ha-icon></button>`;
+
 const KIT_MISSING = `<div style="padding: 16px; color: var(--error-color)">The <b>SB UI Kit</b> integration is not loaded — install “SB UI Kit” from HACS and restart Home Assistant.</div>`;
 
 const STYLE = `
@@ -228,14 +235,16 @@ class SbBackgroundCard extends HTMLElement {
       </div>`;
     }).join("");
     const only = this._config.scripts || [];
+    const folded = !this._config.panel && foldGet(foldKey(CARD, this._config.title));
+    const attention = list.filter((i) => ["bad", "warn"].includes(this._view(i, now).tint)).length;
     const headMenu = !this._config.panel && this._menu === "__head" ? kit().menu("Card actions", [{ act: "page", icon: "mdi:open-in-app", label: "Open the SB Background page" }]) : "";
     this.shadowRoot.querySelector(".body").innerHTML = `
       <div class="sbk-head sbk-hwrap"><h2>${esc(this._config.title)}</h2>
-        <span class="sbk-count">${list.length} instance${list.length === 1 ? "" : "s"}</span>
+        <span class="sbk-count">${list.length} instance${list.length === 1 ? "" : "s"}${folded && attention ? ` · <span style="color: var(--error-color)">${attention} need${attention === 1 ? "s" : ""} attention</span>` : ""}</span>
         <button class="sbk-add add" title="Add a background instance"><ha-icon icon="mdi:plus"></ha-icon>Add</button>
-        ${this._config.panel ? "" : `<button class="sbk-kb hkb ${headMenu ? "on" : ""}" aria-label="More" title="More: open the SB Background page" aria-expanded="${headMenu ? "true" : "false"}">${kit().kbIcon}</button>${headMenu}`}
+        ${this._config.panel ? "" : `<button class="sbk-kb hkb ${headMenu ? "on" : ""}" aria-label="More" title="More: open the SB Background page" aria-expanded="${headMenu ? "true" : "false"}">${kit().kbIcon}</button>${headMenu}${foldBtn(folded)}`}
       </div>
-      ${rows || `<div class="sbk-empty">${only.length
+      ${folded ? "" : rows || `<div class="sbk-empty">${only.length
         ? `No instances of ${esc(only.map((x) => h?.states[x]?.attributes?.friendly_name || x).join(", "))} yet.`
         : "No background instances yet. Add one: pick a script and fill in its fields."}</div>`}
       ${this._msg ? `<div class="sbk-note">${esc(this._msg)}</div>` : ""}`;
@@ -255,6 +264,9 @@ class SbBackgroundCard extends HTMLElement {
     const byRow = (el) => this._instances().find((i) => i.entryId === el.closest("[data-e]")?.dataset.e);
     root.querySelector("button.add")?.addEventListener("click", () => this._openEditor(null));
     root.querySelector("button.hkb")?.addEventListener("click", () => this._setMenu(this._menu === "__head" ? null : "__head"));
+    root.querySelector("button.fold")?.addEventListener("click", () => {
+      const k = foldKey(CARD, this._config.title); foldSet(k, !foldGet(k)); this._render();
+    });
     root.querySelectorAll(".sbk-row .sbk-open").forEach((b) => b.addEventListener("click", () => this._openEditor(byRow(b))));
     root.querySelectorAll(".sbk-row .sbk-kb").forEach((b) => b.addEventListener("click", () => {
       const id = byRow(b).entryId; this._setMenu(this._menu === id ? null : id);
