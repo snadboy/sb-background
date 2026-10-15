@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.4.0";
+const VERSION = "0.4.1";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -208,13 +208,13 @@ class SbBackgroundCard extends HTMLElement {
         { act: "del", icon: "mdi:delete-outline", label: "Delete…", danger: true },
       ]) : "";
       return `<div class="sbk-row ${a.enabled ? "" : "off"}" data-e="${esc(i.entryId)}">
-        <button class="sbk-open" aria-label="Edit ${esc(i.name)}">
+        <button class="sbk-open" aria-label="Edit ${esc(i.name)}" title="Edit ${esc(i.name)}">
           <span class="sbk-ico ${v.tint}"><ha-icon icon="${esc(icon)}"></ha-icon></span>
           <span class="sbk-txt"><span class="sbk-t">${esc(i.name)}</span>
             <span class="sbk-s"><span class="sbk-chip">${esc(a.script_name || a.script)}</span>${esc(v.doing)}</span>${v.third}</span>
         </button>
-        ${i.switchEntity ? `<label class="sbk-sw"><input type="checkbox" role="switch" class="en" ${a.enabled ? "checked" : ""} aria-label="${esc(i.name)} enabled"><span></span></label>` : ""}
-        <button class="sbk-kb ${menu ? "on" : ""}" aria-label="More actions for ${esc(i.name)}" aria-expanded="${menu ? "true" : "false"}">${kit().kbIcon}</button>
+        ${i.switchEntity ? `<label class="sbk-sw"><input type="checkbox" role="switch" class="en" ${a.enabled ? "checked" : ""} aria-label="${esc(i.name)} enabled" title="${a.enabled ? "Running — click to stop it" : "Stopped — click to start it"}"><span></span></label>` : ""}
+        <button class="sbk-kb ${menu ? "on" : ""}" aria-label="More actions for ${esc(i.name)}" title="More: duplicate, restart, delete" aria-expanded="${menu ? "true" : "false"}">${kit().kbIcon}</button>
         ${menu}
       </div>`;
     }).join("");
@@ -223,8 +223,8 @@ class SbBackgroundCard extends HTMLElement {
     this.shadowRoot.querySelector(".body").innerHTML = `
       <div class="sbk-head sbk-hwrap"><h2>${esc(this._config.title)}</h2>
         <span class="sbk-count">${list.length} instance${list.length === 1 ? "" : "s"}</span>
-        <button class="sbk-add add"><ha-icon icon="mdi:plus"></ha-icon>Add</button>
-        ${this._config.panel ? "" : `<button class="sbk-kb hkb ${headMenu ? "on" : ""}" aria-label="More" aria-expanded="${headMenu ? "true" : "false"}">${kit().kbIcon}</button>${headMenu}`}
+        <button class="sbk-add add" title="Add a background instance"><ha-icon icon="mdi:plus"></ha-icon>Add</button>
+        ${this._config.panel ? "" : `<button class="sbk-kb hkb ${headMenu ? "on" : ""}" aria-label="More" title="More: open the SB Background page" aria-expanded="${headMenu ? "true" : "false"}">${kit().kbIcon}</button>${headMenu}`}
       </div>
       ${rows || `<div class="sbk-empty">${only.length
         ? `No instances of ${esc(only.map((x) => h?.states[x]?.attributes?.friendly_name || x).join(", "))} yet.`
