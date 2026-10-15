@@ -67,12 +67,19 @@ and the dialog is a sibling of `<ha-card>`. Verified: editor open 75 s, all 7 fi
 Also: HA Notifications channel + its setting; device push optional ("— no device —").
 Script renamed `vacancy_window` → **`area_nightlight`** (copy, move Kitchen, delete old).
 
+## 0.4.0 (2026-10-14) — the kit is shared at run time
+
+The row kit no longer lives here: it is the **sb_ui_kit** integration (repo snadboy/sb-ui-kit),
+served on every page as `window.SBKit` and a manifest dependency of this integration. The card
+adopts `SBKit.sheet`, uses `SBKit.menu` / `SBKit.away`, waits ("Loading…") if it loads first,
+and says "SB UI Kit is not loaded" after 15 s without it. (User chose run-time sharing over a
+generate-the-copies script.)
+
 ## 0.3.0 (2026-10-14) — the shared SB row style
 
 User asked for one consistent style across SB Scheduler, SB Watcher and SB Background; agreed
-from a canvas mockup (https://claude.ai/artifact/59PH75QATuaFtN4t4B1wQX). The **row kit**
-(`KIT_CSS`, `kitMenu`, `sbk-*` classes) is copied VERBATIM into sb-scheduler-card and
-sb-watch-card — change it in all three. Header: title · count · + Add · ⋮. Row: status icon
+from a canvas mockup (https://claude.ai/artifact/59PH75QATuaFtN4t4B1wQX). The row kit was
+copied into all three cards here; since 0.4.0 it is the sb_ui_kit integration instead. Header: title · count · + Add · ⋮. Row: status icon
 (script's own icon; tint armed/run/idle/warn/bad) · name · chip (script) + what it is doing
 now · third line only for an error/warning · Enabled toggle · ⋮ (Edit, Duplicate, Restart,
 Delete… → inline confirm). Tap the row = edit. Theme variables + color-mix, so light themes work.

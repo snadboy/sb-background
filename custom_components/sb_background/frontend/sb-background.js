@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.3.1";
+const VERSION = "0.4.0";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -60,72 +60,21 @@ const loadHaForm = async () => {
   return !!customElements.get("ha-form");
 };
 
-// ---- the SB row kit — the SAME markup and CSS in sb-scheduler-card, sb-watch-card and here
-// (agreed mockup 2026-10-14: header = title · count · + Add · ⋮; row = status icon · name ·
-// one summary line (chip + what it is doing now) · enabled toggle · ⋮; tap the row = edit;
-// Duplicate / Run now|Restart / Delete… live in ⋮; delete confirms inline; a third line
-// only for a warning or a problem). Theme variables only, so light and dark themes both work.
-const KIT_CSS = `
-ha-card { overflow: visible; }
-.sbk-head { display: flex; align-items: center; gap: 8px; padding: 12px 4px 8px 16px; }
-.sbk-head h2 { margin: 0; font-size: 20px; font-weight: 500; line-height: 1.2; }
-.sbk-count { flex: 1; font-size: 13px; color: var(--secondary-text-color); }
-.sbk-add { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 14px 0 10px; border-radius: 18px; border: none;
-           background: color-mix(in srgb, var(--primary-color) 16%, transparent); color: var(--primary-color);
-           font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; --mdc-icon-size: 18px; }
-.sbk-kb { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: none; background: none; padding: 0;
-          color: var(--secondary-text-color); border-radius: 22px; cursor: pointer; flex: 0 0 44px; --mdc-icon-size: 20px; }
-.sbk-kb:hover, .sbk-kb.on { background: color-mix(in srgb, var(--primary-text-color) 10%, transparent); }
-.sbk-row { position: relative; display: flex; align-items: center; gap: 4px; padding: 0 4px 0 12px; border-top: 1px solid var(--divider-color); min-height: 68px; }
-.sbk-row.off .sbk-open { opacity: .5; }
-.sbk-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 10px 0; border: none; background: none;
-            text-align: left; color: inherit; font: inherit; cursor: pointer; border-radius: 8px; }
-.sbk-ico { width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; flex: 0 0 40px; --mdc-icon-size: 22px; }
-.sbk-ico.armed { background: color-mix(in srgb, var(--primary-color) 16%, transparent); color: var(--primary-color); }
-.sbk-ico.run { background: color-mix(in srgb, var(--success-color, #43a047) 20%, transparent); color: var(--success-color, #43a047); }
-.sbk-ico.idle { background: color-mix(in srgb, var(--primary-text-color) 7%, transparent); color: var(--secondary-text-color); }
-.sbk-ico.warn { background: color-mix(in srgb, var(--warning-color, #ffa600) 18%, transparent); color: var(--warning-color, #ffa600); }
-.sbk-ico.bad { background: color-mix(in srgb, var(--error-color, #db4437) 20%, transparent); color: var(--error-color, #db4437); }
-.sbk-txt { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.sbk-t { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--primary-text-color); }
-.sbk-s { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; font-size: 13px; line-height: 1.35; color: var(--secondary-text-color); }
-.sbk-chip { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; flex: 0 0 auto;
-            background: color-mix(in srgb, var(--primary-color) 16%, transparent); color: var(--primary-color); }
-.sbk-dot { width: 3px; height: 3px; border-radius: 2px; background: var(--secondary-text-color); opacity: .7; flex: 0 0 3px; }
-.sbk-m { font-size: 12.5px; line-height: 1.35; white-space: normal; }
-.sbk-m.bad { color: var(--error-color, #db4437); }
-.sbk-m.warn { color: var(--warning-color, #ffa600); }
-.sbk-sw { position: relative; width: 40px; height: 24px; flex: 0 0 40px; margin: 0 4px; }
-.sbk-sw input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
-.sbk-sw span { position: absolute; inset: 0; border-radius: 12px; background: var(--disabled-color, #9e9e9e); pointer-events: none; transition: background .15s; }
-.sbk-sw span::after { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; border-radius: 9px; background: #fff; transition: left .15s; }
-.sbk-sw input:checked + span { background: var(--primary-color); }
-.sbk-sw input:checked + span::after { left: 19px; }
-.sbk-sw input:focus-visible + span { outline: 2px solid var(--primary-color); outline-offset: 2px; }
-.sbk-menu { position: absolute; right: 8px; top: 52px; z-index: 5; min-width: 196px; padding: 6px 0; display: flex; flex-direction: column;
-            background: var(--card-background-color, #fff); border: 1px solid var(--divider-color); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-.sbk-menu button { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 16px; border: none; border-radius: 0; background: none;
-                   color: var(--primary-text-color); font: inherit; font-size: 14px; text-align: left; cursor: pointer; --mdc-icon-size: 18px; }
-.sbk-menu button:hover { background: color-mix(in srgb, var(--primary-text-color) 8%, transparent); }
-.sbk-menu button:disabled { opacity: .45; cursor: default; }
-.sbk-menu .del { color: var(--error-color, #db4437); }
-.sbk-menu hr { border: none; border-top: 1px solid var(--divider-color); margin: 4px 0; }
-.sbk-head .sbk-menu { top: 50px; }
-.sbk-hwrap { position: relative; }
-.sbk-confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 12px 12px 16px; min-height: 68px; box-sizing: border-box;
-               border-top: 1px solid var(--divider-color); background: color-mix(in srgb, var(--error-color, #db4437) 10%, transparent); }
-.sbk-confirm p { margin: 0; flex: 1 1 180px; font-size: 14px; }
-.sbk-btn { height: 36px; padding: 0 16px; border-radius: 18px; border: 1px solid var(--divider-color); background: none;
-           color: var(--primary-text-color); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
-.sbk-btn.danger { background: var(--error-color, #db4437); border-color: var(--error-color, #db4437); color: #fff; }
-.sbk-empty { color: var(--secondary-text-color); padding: 12px 16px 16px; border-top: 1px solid var(--divider-color); }
-.sbk-note { color: var(--secondary-text-color); font-size: 13px; padding: 8px 16px 12px; border-top: 1px solid var(--divider-color); }
-`;
-const KB_ICON = `<ha-icon icon="mdi:dots-vertical"></ha-icon>`;
-const kitMenu = (label, items) => `<div class="sbk-menu" role="menu" aria-label="${esc(label)}">${items.map((it) => it === "-" ? "<hr>"
-  : `<button role="menuitem" data-act="${esc(it.act)}" class="${it.danger ? "del" : ""}" ${it.disabled ? "disabled" : ""}><ha-icon icon="${esc(it.icon)}"></ha-icon>${esc(it.label)}</button>`).join("")}</div>`;
+// ---- the shared SB row style: window.SBKit, from the SB UI Kit integration ----------
+// One copy of the CSS + menu helpers for sb-scheduler-card, sb-watch-card and sb-background,
+// loaded on every page by the sb_ui_kit integration (a manifest dependency of sb_scheduler,
+// sb_watch and sb_background). This card only waits for it and adopts its stylesheet.
+const kit = () => (window.SBKit && window.SBKit.api >= 1 ? window.SBKit : null);
+let kitPromise = null;
+const whenKit = () => kitPromise || (kitPromise = new Promise((resolve) => {
+  if (kit()) { resolve(kit()); return; }
+  const on = () => { if (kit()) { window.removeEventListener("sb-ui-kit-ready", on); resolve(kit()); } };
+  window.addEventListener("sb-ui-kit-ready", on);
+  setTimeout(() => resolve(kit()), 15000);     // still null: not installed
+}));
+const KIT_MISSING = `<div style="padding: 16px; color: var(--error-color)">The <b>SB UI Kit</b> integration is not loaded — install “SB UI Kit” from HACS and restart Home Assistant.</div>`;
 
-const STYLE = KIT_CSS + `
+const STYLE = `
 :host { display: block; }
 .ash { padding-bottom: 4px; }
 dialog.sbbg button { font: inherit; cursor: pointer; border-radius: 16px; border: 1px solid var(--divider-color); background: none;
@@ -224,8 +173,23 @@ class SbBackgroundCard extends HTMLElement {
     return { tint, doing, third };
   }
 
+  /** The shared style is in: adopt its sheet (once per shadow root) and go on. Not yet: show
+   *  "Loading…" and render again when the kit arrives — or say it is not installed. */
+  _kitReady() {
+    const K = kit();
+    if (K) {
+      if (K.sheet && !this.shadowRoot.adoptedStyleSheets.includes(K.sheet)) this.shadowRoot.adoptedStyleSheets = [...this.shadowRoot.adoptedStyleSheets, K.sheet];
+      return true;
+    }
+    if (!this._kitWaiting) { this._kitWaiting = true; whenKit().then((k) => { this._kitMissing = !k; if (k) this._render(); else this._kitReady(); }); }
+    const html = this._kitMissing ? KIT_MISSING : `<div style="padding: 16px; color: var(--secondary-text-color)">Loading…</div>`;
+    this.shadowRoot.querySelector(".body").innerHTML = html;
+    return false;
+  }
+
   _render() {
     if (!this._config) return;
+    if (!this._kitReady()) return;
     const list = this._instances();
     const now = Date.now();
     const h = this._hass;
@@ -236,7 +200,7 @@ class SbBackgroundCard extends HTMLElement {
           <button class="sbk-btn nodel">Keep</button><button class="sbk-btn danger dodel">Delete</button></div>`;
       }
       const icon = h?.states[a.script]?.attributes?.icon || "mdi:cog-play-outline";
-      const menu = this._menu === i.entryId ? kitMenu(`${i.name} actions`, [
+      const menu = this._menu === i.entryId ? kit().menu(`${i.name} actions`, [
         { act: "edit", icon: "mdi:pencil", label: "Edit" },
         { act: "dup", icon: "mdi:content-copy", label: "Duplicate" },
         { act: "restart", icon: "mdi:restart", label: "Restart", disabled: !a.enabled || !i.buttonEntity || this._busy[i.entryId] },
@@ -250,17 +214,17 @@ class SbBackgroundCard extends HTMLElement {
             <span class="sbk-s"><span class="sbk-chip">${esc(a.script_name || a.script)}</span>${esc(v.doing)}</span>${v.third}</span>
         </button>
         ${i.switchEntity ? `<label class="sbk-sw"><input type="checkbox" role="switch" class="en" ${a.enabled ? "checked" : ""} aria-label="${esc(i.name)} enabled"><span></span></label>` : ""}
-        <button class="sbk-kb ${menu ? "on" : ""}" aria-label="More actions for ${esc(i.name)}" aria-expanded="${menu ? "true" : "false"}">${KB_ICON}</button>
+        <button class="sbk-kb ${menu ? "on" : ""}" aria-label="More actions for ${esc(i.name)}" aria-expanded="${menu ? "true" : "false"}">${kit().kbIcon}</button>
         ${menu}
       </div>`;
     }).join("");
     const only = this._config.scripts || [];
-    const headMenu = !this._config.panel && this._menu === "__head" ? kitMenu("Card actions", [{ act: "page", icon: "mdi:open-in-app", label: "Open the SB Background page" }]) : "";
+    const headMenu = !this._config.panel && this._menu === "__head" ? kit().menu("Card actions", [{ act: "page", icon: "mdi:open-in-app", label: "Open the SB Background page" }]) : "";
     this.shadowRoot.querySelector(".body").innerHTML = `
       <div class="sbk-head sbk-hwrap"><h2>${esc(this._config.title)}</h2>
         <span class="sbk-count">${list.length} instance${list.length === 1 ? "" : "s"}</span>
         <button class="sbk-add add"><ha-icon icon="mdi:plus"></ha-icon>Add</button>
-        ${this._config.panel ? "" : `<button class="sbk-kb hkb ${headMenu ? "on" : ""}" aria-label="More" aria-expanded="${headMenu ? "true" : "false"}">${KB_ICON}</button>${headMenu}`}
+        ${this._config.panel ? "" : `<button class="sbk-kb hkb ${headMenu ? "on" : ""}" aria-label="More" aria-expanded="${headMenu ? "true" : "false"}">${kit().kbIcon}</button>${headMenu}`}
       </div>
       ${rows || `<div class="sbk-empty">${only.length
         ? `No instances of ${esc(only.map((x) => h?.states[x]?.attributes?.friendly_name || x).join(", "))} yet.`
@@ -273,12 +237,7 @@ class SbBackgroundCard extends HTMLElement {
     this._menu = id;
     // one outside click / Escape closes it; installed only while a menu is open
     this._unMenu?.();
-    if (id) {
-      const away = (e) => { if (!e.composedPath().some((n) => n.classList?.contains("sbk-menu") || n.classList?.contains("sbk-kb"))) this._setMenu(null); };
-      const esc_ = (e) => { if (e.key === "Escape") this._setMenu(null); };
-      setTimeout(() => { window.addEventListener("click", away, true); window.addEventListener("keydown", esc_, true); });
-      this._unMenu = () => { window.removeEventListener("click", away, true); window.removeEventListener("keydown", esc_, true); this._unMenu = null; };
-    }
+    if (id) { const off = kit().away(() => this._setMenu(null)); this._unMenu = () => { off(); this._unMenu = null; }; }
     this._render();
   }
 

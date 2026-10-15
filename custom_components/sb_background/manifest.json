@@ -1,13 +1,22 @@
 {
   "domain": "sb_background",
   "name": "SB Background",
-  "codeowners": ["@snadboy"],
+  "codeowners": [
+    "@snadboy"
+  ],
   "config_flow": true,
-  "dependencies": ["http", "frontend", "panel_custom", "script", "persistent_notification"],
+  "dependencies": [
+    "http",
+    "frontend",
+    "panel_custom",
+    "script",
+    "persistent_notification",
+    "sb_ui_kit"
+  ],
   "documentation": "https://github.com/snadboy/sb-background",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/snadboy/sb-background/issues",
   "requirements": [],
-  "version": "0.3.1"
+  "version": "0.4.0"
 }
