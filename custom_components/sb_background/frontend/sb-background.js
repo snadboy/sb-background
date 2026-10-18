@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.5.1";
+const VERSION = "0.5.2";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -481,8 +481,6 @@ class SbBackgroundCardEditor extends HTMLElement {
   }
 }
 
-if (!customElements.get(CARD)) customElements.define(CARD, SbBackgroundCard);
-if (!customElements.get(`${CARD}-editor`)) customElements.define(`${CARD}-editor`, SbBackgroundCardEditor);
 window.customCards = window.customCards || [];
 if (!window.customCards.some((c) => c.type === CARD)) {
   window.customCards.push({ type: CARD, name: "SB Background", preview: false, documentationURL: "https://github.com/snadboy/sb-background",
@@ -567,5 +565,21 @@ class SbBackgroundPanel extends HTMLElement {
     if (inst) this._card._openEditor(inst);
   }
 }
-if (!customElements.get("sb-background-panel")) customElements.define("sb-background-panel", SbBackgroundPanel);
+// Register the elements — and register them AGAIN if they go missing. Since HA 2026.10 the
+// frontend replaces window.customElements with a scoped-registry polyfill on dashboard pages,
+// and whether this module (add_extra_js_url) runs before or after that swap depends on timing:
+// when before, the definition is lost and the card shows "Configuration error" (2026-10-18,
+// intermittent). A fresh subclass is defined each time: a constructor cannot be registered
+// twice. HA's error card rebuilds itself once the tag is defined in the current registry.
+const DEFS = [[CARD, SbBackgroundCard], [`${CARD}-editor`, SbBackgroundCardEditor], ["sb-background-panel", SbBackgroundPanel]];
+const ensureDefined = () => {
+  for (const [tag, C] of DEFS) {
+    if (customElements.get(tag)) continue;
+    try { customElements.define(tag, class extends C {}); } catch (e) { /* defined meanwhile */ }
+  }
+};
+ensureDefined();
+const settle = setInterval(ensureDefined, 500);
+setTimeout(() => clearInterval(settle), 60000);
+window.addEventListener("location-changed", ensureDefined);
 console.info(`%c SB-BACKGROUND %c v${VERSION} `, "background:#37474f;color:#fff", "background:#90a4ae;color:#000");

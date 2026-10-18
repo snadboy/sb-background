@@ -119,3 +119,11 @@ blueprint are deleted (YAML in docker-homelab git history, commit 7d4c31c).
 
 - Rename the "Lights that must be off" field to say what it does ("Skip the nightlight
   while any of these are on") — offered to the user, not asked for yet.
+
+## 0.5.2 (2026-10-18) — survive HA's element-registry swap
+
+The card showed "Configuration error" on the Monitor dashboard, intermittently. Since HA
+2026.10 the frontend replaces `window.customElements` with a scoped-registry polyfill on
+dashboard pages; an add_extra_js_url module that runs BEFORE the swap loses its definitions.
+Now `ensureDefined()` re-defines a fresh subclass of each element when missing (every 500 ms
+for 60 s, and on `location-changed`). Same fix as sb-modes 0.3.5.
