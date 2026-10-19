@@ -11,7 +11,7 @@
  * entity field gets HA's entity picker and a `multiple` one a list — the same
  * controls as HA's "run script" dialog.
  */
-const VERSION = "0.5.2";
+const VERSION = "0.5.3";
 const CARD = "sb-background-card";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -578,8 +578,11 @@ const ensureDefined = () => {
     try { customElements.define(tag, class extends C {}); } catch (e) { /* defined meanwhile */ }
   }
 };
+// Not only at load: HA can swap the registry again later (when a part of the frontend that
+// needs scoped registries is first loaded), and a dashboard redrawn after that — e.g. after
+// HA restarts — shows "Configuration error" again (2026-10-19, a long-open tab). So check
+// for good, cheaply: on every navigation, and every 2 s (a few customElements.get calls).
 ensureDefined();
-const settle = setInterval(ensureDefined, 500);
-setTimeout(() => clearInterval(settle), 60000);
+setInterval(ensureDefined, 2000);
 window.addEventListener("location-changed", ensureDefined);
 console.info(`%c SB-BACKGROUND %c v${VERSION} `, "background:#37474f;color:#fff", "background:#90a4ae;color:#000");

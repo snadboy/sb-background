@@ -127,3 +127,10 @@ The card showed "Configuration error" on the Monitor dashboard, intermittently. 
 dashboard pages; an add_extra_js_url module that runs BEFORE the swap loses its definitions.
 Now `ensureDefined()` re-defines a fresh subclass of each element when missing (every 500 ms
 for 60 s, and on `location-changed`). Same fix as sb-modes 0.3.5.
+
+## 0.5.3 (2026-10-19) — re-register for the life of the page
+
+0.5.2 only re-checked for 60 s after load and on navigation. HA can swap the registry again
+much later (a lazily loaded part of the frontend), and a long-open tab's dashboard redrawn
+after an HA restart showed "Configuration error" again. Now every 2 s for good (cheap).
+Verified headless: simulated swap 65 s after load → both cards and panels back within 2.5 s.
