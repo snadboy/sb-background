@@ -21,6 +21,7 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import CoreState, HassJob, HomeAssistant, callback
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
@@ -36,6 +37,10 @@ from .supervisor import InstanceSupervisor
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH, Platform.BUTTON]
+# `sb_background:` in configuration.yaml (no options) loads the integration — the card, the
+# sidebar page and "+ Add" — even with no instances: a config-flow integration with no
+# entries is otherwise never set up, and the card shows "Configuration error" (2026-10-21).
+CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:

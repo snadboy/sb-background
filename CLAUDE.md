@@ -134,3 +134,13 @@ for 60 s, and on `location-changed`). Same fix as sb-modes 0.3.5.
 much later (a lazily loaded part of the frontend), and a long-open tab's dashboard redrawn
 after an HA restart showed "Configuration error" again. Now every 2 s for good (cheap).
 Verified headless: simulated swap 65 s after load → both cards and panels back within 2.5 s.
+
+## 0.5.4 (2026-10-21) — load with no instances
+
+The 2026-10-21 SB Modes cleanup removed the last three instances (Kitchen/Dining/Living
+overnight nightlights, now SB Modes). A config-flow integration with no entries is never set
+up, so the card's module was never served → "Configuration error" on the Monitor dashboard
+after the next restart. Now `CONFIG_SCHEMA = cv.empty_config_schema(DOMAIN)` and HA's
+configuration.yaml has a bare `sb_background:` (backup configuration.yaml.bak-2026-10-21-sb-background):
+the card, sidebar page and "+ Add" work with 0 instances. Verified headless after a restart.
+User wants to keep SB Background ("not ready to give up on it").
